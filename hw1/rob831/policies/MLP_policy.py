@@ -81,10 +81,15 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             observation = obs[None]
 
         # TODO return the action that the policy prescribes
-        raise NotImplementedError
+        # Return the action that the policy prescribes
+        return self.forward(observation)
+
+        
+        # raise NotImplementedError
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
+        # write this function
         raise NotImplementedError
 
     # This function defines the forward pass of the network.
@@ -93,7 +98,8 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor) -> Any:
-        raise NotImplementedError
+        return self.net(observation)
+        # raise NotImplementedError
 
 
 #####################################################
@@ -109,7 +115,14 @@ class MLPPolicySL(MLPPolicy):
             adv_n=None, acs_labels_na=None, qvals=None
     ):
         # TODO: update the policy and return the loss
-        loss = TODO
+        # Find the action for each observation then compute the loss over all the actions
+        pred_actions = torch.stack([self.get_action(torch.Tensor(observation)) for observation in observations])
+        loss = self.loss.forward(pred_actions.resize(pred_actions.shape[0], pred_actions.shape[2]), torch.Tensor(actions))
+
+        # Backpropegate the loss and update the parameters of the network
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         return {
             # You can add extra logging information here, but keep this line

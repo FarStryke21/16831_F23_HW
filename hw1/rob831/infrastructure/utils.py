@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import torch
 
 ############################################
 ############################################
@@ -7,7 +8,7 @@ import time
 def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('rgb_array')):
 
     # initialize env for the beginning of a new rollout
-    ob = TODO  # HINT: should be the output of resetting the env [OK]
+    ob = env.reset() # HINT: should be the output of resetting the env [OK]
 
     # init vars
     obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
@@ -27,12 +28,12 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # use the most recent ob to decide what to do
         obs.append(ob)
-        ac = TODO # HINT: query the policy's get_action function [OK]
+        ac = policy.get_action(torch.tensor(ob).float()) # HINT: query the policy's get_action function [OK]
         ac = ac[0]
         acs.append(ac)
 
         # take that action and record results
-        ob, rew, done, _ = env.step(ac)
+        ob, rew, done, _ = env.step(ac.detach().numpy())
 
         # record result of taking that action
         steps += 1
@@ -41,7 +42,10 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # TODO end the rollout if the rollout ended
         # HINT: rollout can end due to done, or due to max_path_length
-        rollout_done = TODO  # HINT: this is either 0 or 1
+        rollout_done = False  # HINT: this is either 0 or 1
+        if steps >= max_path_length or done:
+            rollout_done = True
+            
         terminals.append(rollout_done)
 
         if rollout_done:
@@ -61,7 +65,14 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
     paths = []
     while timesteps_this_batch < min_timesteps_per_batch:
 
-        TODO
+        path     = sample_trajectory(env, policy, max_path_length, render, render_mode)
+        path_len = get_pathlength(path)
+
+        # Update the number of timesteps collected in this path
+        timesteps_this_batch += path_len
+
+        # Append a sample trajectory for each timestep
+        paths.append(path)
 
     return paths, timesteps_this_batch
 
@@ -73,8 +84,8 @@ def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, ren
         Hint1: use sample_trajectory to get each path (i.e. rollout) that goes into the sampled_paths list.
     """
     sampled_paths = []
-
-    TODO
+    for _ in range(ntraj):
+        sampled_paths.append(sample_trajectory(env, policy, max_path_length, render, render_mode))
 
     return sampled_paths
 
@@ -91,7 +102,7 @@ def Path(obs, image_obs, acs, rewards, next_obs, terminals):
     return {"observation" : np.array(obs, dtype=np.float32),
             "image_obs" : np.array(image_obs, dtype=np.uint8),
             "reward" : np.array(rewards, dtype=np.float32),
-            "action" : np.array(acs, dtype=np.float32),
+            "action" : np.array(torch.stack(acs).detach().numpy(), dtype=np.float32),
             "next_observation": np.array(next_obs, dtype=np.float32),
             "terminal": np.array(terminals, dtype=np.float32)}
 
