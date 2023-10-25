@@ -55,65 +55,62 @@ def mean_squared_error(a, b):
 ############################################
 
 def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('rgb_array')):
-    ob = env.reset()
-    obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
+    # TODO: get this from hw1
+    obs = env.reset()
+    obses, acts, rews, nobses, terms, imgs = [], [], [], [], [], []
     steps = 0
     while True:
-        if render:  # feel free to ignore this for now
+        if render:
             if 'rgb_array' in render_mode:
-                if hasattr(env.unwrapped, 'sim'):
+                if hasattr(env.unwrapped, sim):
                     if 'track' in env.unwrapped.model.camera_names:
-                        image_obs.append(env.unwrapped.sim.render(camera_name='track', height=500, width=500)[::-1])
+                        imgs.append(env.unwrapped.sim.render(camera_name='track', height=500, width=500)[::-1])
                     else:
-                        image_obs.append(env.unwrapped.sim.render(height=500, width=500)[::-1])
-                else:
-                    image_obs.append(env.render(mode=render_mode))
+                        imgs.append(env.unwrapped.sim.render(height=500, width=500)[::-1])
+
             if 'human' in render_mode:
                 env.render(mode=render_mode)
                 time.sleep(env.model.opt.timestep)
-        obs.append(ob)
-        ac = policy.get_action(ob)
-        ac = ac[0]
-        acs.append(ac)
-        ob, rew, done, _ = env.step(ac)
-        # add the observation after taking a step to next_obs
-        next_obs.append(ob)
-        rewards.append(rew)
+
+        obses.append(obs)
+        act = policy.get_action(obs)
+        act = act[0]
+        acts.append(act)
+        nobs, rew, done, _ = env.step(act)
+        nobses.append(nobs)
+        rews.append(rew)
+        obs = nobs.copy()
         steps += 1
-        # If the episode ended, the corresponding terminal value is 1
-        # otherwise, it is 0
+
         if done or steps > max_path_length:
-            terminals.append(1)
+            terms.append(1)
             break
         else:
-            terminals.append(0)
-    return Path(obs, image_obs, acs, rewards, next_obs, terminals)
+            terms.append(0)
+
+    return Path(obses, imgs, acts, rews, nobses, terms)
 
 def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, render=False, render_mode=('rgb_array')):
-
+    # TODO: get this from hw1
     timesteps_this_batch = 0
     paths = []
     while timesteps_this_batch < min_timesteps_per_batch:
-
-        #collect rollout
         path = sample_trajectory(env, policy, max_path_length, render, render_mode)
         paths.append(path)
-
-        #count steps
         timesteps_this_batch += get_pathlength(path)
-        print('At timestep:    ', timesteps_this_batch, '/', min_timesteps_per_batch, end='\r')
+        print('sampled {}/{} timesteps'.format(timesteps_this_batch, min_timesteps_per_batch), end='\r')
 
     return paths, timesteps_this_batch
 
 def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, render_mode=('rgb_array')):
-
+    # TODO: get this from hw1
     paths = []
     for i in range(ntraj):
-        # collect rollout
         path = sample_trajectory(env, policy, max_path_length, render, render_mode)
         paths.append(path)
-
+        print('sampled {}/ {} trajs'.format(i, ntraj), end='\r')
     return paths
+
 ############################################
 ############################################
 

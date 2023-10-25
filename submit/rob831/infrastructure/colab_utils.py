@@ -1,4 +1,3 @@
-
 from gym.wrappers import Monitor
 import glob
 import io
@@ -20,7 +19,7 @@ def show_video():
              </video>'''.format(encoded.decode('ascii'))))
   else: 
     print("Could not find video")
-    
+
 
 def wrap_env(env):
   env = Monitor(env, '/content/video', force=True)

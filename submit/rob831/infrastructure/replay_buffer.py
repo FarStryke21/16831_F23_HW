@@ -10,7 +10,6 @@ class ReplayBuffer(object):
         self.obs = None
         self.acs = None
         self.concatenated_rews = None
-        self.unconcatenated_rews = None
         self.next_obs = None
         self.terminals = None
 
@@ -33,7 +32,6 @@ class ReplayBuffer(object):
             self.next_obs = next_observations[-self.max_size:]
             self.terminals = terminals[-self.max_size:]
             self.concatenated_rews = concatenated_rews[-self.max_size:]
-            self.unconcatenated_rews = unconcatenated_rews[-self.max_size:]
         else:
             self.obs = np.concatenate([self.obs, observations])[-self.max_size:]
             self.acs = np.concatenate([self.acs, actions])[-self.max_size:]
@@ -46,10 +44,6 @@ class ReplayBuffer(object):
             self.concatenated_rews = np.concatenate(
                 [self.concatenated_rews, concatenated_rews]
             )[-self.max_size:]
-            if isinstance(unconcatenated_rews, list):
-                self.unconcatenated_rews += unconcatenated_rews  # TODO keep only latest max_size around
-            else:
-                self.unconcatenated_rews.append(unconcatenated_rews)  # TODO keep only latest max_size around
 
     ########################################
     ########################################
@@ -65,13 +59,8 @@ class ReplayBuffer(object):
     ########################################
 
     def sample_random_data(self, batch_size):
-        assert (
-                self.obs.shape[0]
-                == self.acs.shape[0]
-                == self.rews.shape[0]
-                == self.next_obs.shape[0]
-                == self.terminals.shape[0]
-        )
+
+        assert self.obs.shape[0] == self.acs.shape[0] == self.concatenated_rews.shape[0] == self.next_obs.shape[0] == self.terminals.shape[0]
         rand_indices = np.random.permutation(self.obs.shape[0])[:batch_size]
         return self.obs[rand_indices], self.acs[rand_indices], self.concatenated_rews[rand_indices], self.next_obs[rand_indices], self.terminals[rand_indices]
 
