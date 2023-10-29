@@ -26,6 +26,21 @@ class RNDModel(nn.Module, BaseExplorationModel):
         # 1) f, the random function we are trying to learn
         # 2) f_hat, the function we are using to learn f
 
+        self.f = ptu.build_mlp(
+            self.ob_dim,
+            self.output_size,
+            self.n_layers,
+            self.size,
+            init_method=init_method_1,
+        )
+        self.f_hat = ptu.build_mlp(
+            self.ob_dim,
+            self.output_size,
+            self.n_layers,
+            self.size,
+            init_method=init_method_2,
+        )
+        
     def forward(self, ob_no):
         # <DONE>: Get the prediction error for ob_no
         # HINT: Remember to detach the output of self.f!
